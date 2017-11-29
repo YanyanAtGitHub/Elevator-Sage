@@ -1,0 +1,222 @@
+{
+    init: function(elevators, floors) {
+        
+        function abs(a){
+            if(a < 0){
+                return -a                
+            }
+            else{
+                return a
+            }
+            
+        }
+        
+        function getup(){
+            var upArray = new Array()
+
+            for(var i = 0; i < floors.length - 1; i++){
+                if(floors[i].on("up_button_pressed").buttonStates.up == "activated"){
+                    upArray.push(i)
+                }     
+            }
+            return upArray
+        }
+
+        function getdown(){
+            var downArray = new Array()
+
+            for(var i = 1; i < floors.length; i++){
+                if(floors[i].on("down_button_pressed").buttonStates.down == "activated"){
+                    downArray.push(i)
+                }
+            }
+         
+            return downArray
+        }
+        
+        function pressedarray(elevator){
+            var returnarray = new Array()
+            return returnarray.concat(elevator.getPressedFloors())
+        }
+        
+        function decidedirection(elevator){
+            if(elevator.currentFloor() == 0){
+                return "up"
+            }
+            else{
+                if(elevator.currentFloor() == floors.length -1){
+                    return "down"
+                }
+                else{
+                    var weightup = 0
+                    var weightdown = 0
+                    var totalarray = new Array()
+                    totalarray = totalarray.concat(pressedarray(elevator), getup(), getdown())
+
+                    console.log("total array is" + totalarray)
+
+                    for(var i in totalarray){
+                        console.log("currentfloor is" + elevator.currentFloor())
+                        console.log("i is" + totalarray[i])
+                        if(totalarray[i] > elevator.currentFloor()){
+                            console.log("weightup has been triggered")
+                            weightup = weightup + 1
+                        }
+                        else{
+                            console.log("weightdown has been triggered")
+                            weightdown = weightdown +1
+                        }             
+                    }
+
+                    totalarray = totalarray.sort()
+                    console.log("updated totalarry is " + totalarray)
+
+                    console.log("weightup is " + weightup)
+                    console.log("weightdown is " + weightdown)
+
+                    if(weightup > weightdown){
+                        console.log("return weightup")
+                        return "up"
+
+                    }
+                    else{
+                        console.log("return weightup")
+                        return "down"
+                    }
+                    
+                }
+            }
+           
+
+        }
+        
+        function decidefloor(direction, elevator){
+            if(direction == "up"){
+                console.log("direction = up")
+                var newuparray = new Array()
+                console.log("pressed array is " + pressedarray(elevator))
+                console.log("getup array is " + getup())
+                
+                newuparray = newuparray.concat(pressedarray(elevator), getup()).sort()
+                console.log("sorted array is " + newuparray)
+                for(var i in newuparray){
+                    console.log("i = " + newuparray[i])
+                    console.log("curretfloor is " + elevator.currentFloor())
+                    if(newuparray[i] > elevator.currentFloor()){
+                        console.log("return floor is" + newuparray[i])
+                        return newuparray[i]
+                    }
+                    else{
+                        continue;
+                    }                    
+                }
+                return floors.length- 1
+            }
+            else{
+                console.log("direction = down")
+                console.log("pressed array is " + pressedarray(elevator))
+                console.log("getdown array is " + getdown())
+                var newdownarray = new Array()
+                newdownarray = newdownarray.concat(pressedarray(elevator), getdown()).sort().reverse();
+                console.log("newdownarry is " + newdownarray)
+                for(var i in newdownarray){
+                    console.log("curretfloor is " + elevator.currentFloor())
+                    console.log("i is " + newdownarray[i])
+                    if(newdownarray[i] < elevator.currentFloor()){
+                        console.log("return" + newdownarray[i])
+                        return newdownarray[i]
+                    }
+                    else{
+                        continue;
+                    }                    
+                }
+                return 0
+            }
+            
+        }
+        
+        function maxLoad(elevator){
+            var pressarray = new Array()
+            var gap = floors.length
+            var returnitem
+            pressarray = pressedarray(elevator).sort()
+            
+            for(var i in pressarray){
+                if(abs(pressarray[i] - elevator.currentFloor())< gap){
+                    gap = pressarray[i] - elevator.currentFloor()
+                    returnitem = pressarray[i]
+                }
+            }
+            return returnitem
+            
+        }
+        
+        function goTo(elevator){
+            var direction = decidedirection(elevator)
+            console.log(direction)
+
+            if(elevator.loadFactor() > 0.7){
+
+                console.log("triggered max load")
+
+                elevator.goToFloor(maxLoad(elevator));
+            }
+            else{
+                var targetfloor = decidefloor(direction, elevator)
+                
+                console.log("stopped targetfloor is " + targetfloor)
+                              
+                elevator.goToFloor(targetfloor, true);
+                console.log("destinationqueue is " + elevator.checkDestinationQueue());
+                
+            }
+        }
+        
+        
+
+        // Whenever the elevator is idle (has no more queued destinations) ...
+        elevators[0].on("idle", function() {
+            goTo(elevators[0])
+           
+        });
+        
+
+        elevators[0].on("stopped_at_floor", function() {
+            goTo(elevators[0])
+
+        });
+        
+        elevators[1].on("stopped_at_floor", function() {
+            goTo(elevators[1])
+
+        });
+
+        elevators[0].on("floor_button_pressed", function() {
+            goTo(elevators[0])
+
+        });
+        
+        elevators[1].on("floor_button_pressed", function() {
+            goTo(elevators[1])
+
+        });
+        
+        
+            
+       
+        
+        
+            
+            
+        
+     //   elevator.on("passing_floor", function(floorNum, direction) {
+     //       goTo()
+      //  });
+
+        
+        
+    },
+    update: function(dt, elevators, floors) {
+        // We normally don't need to do anything here
+    }
+}
