@@ -1,0 +1,144 @@
+{
+    init: function(elevators, floors) {
+        function getdirection(elevator){
+            if(elevator.goingUpIndicator() == true){
+                return "up"
+            }
+            else{
+                return "down"
+            }
+        }
+
+        function getup(){
+            var upArray = new Array()
+
+            for(var i = 0; i < floors.length - 1; i++){
+                if(floors[i].on("up_button_pressed").buttonStates.up == "activated"){
+                    upArray.push(i)
+                }     
+            }
+            return upArray
+        }
+
+        function getdown(){
+            var downArray = new Array()
+
+            for(var i = 1; i < floors.length; i++){
+                if(floors[i].on("down_button_pressed").buttonStates.down == "activated"){
+                    downArray.push(i)
+                }
+            }
+
+            return downArray
+        }
+        
+        function destinationrefresh(){
+
+            var dest0 = []
+            for(var i in elevators[0].destinationQueue){
+                dest0.push(elevators[0].destinationQueue[i])
+            }
+
+            // console.log("dest0 = " + dest0)
+            var dest1 = []
+            for(var t in elevators[1].destinationQueue){
+                dest1.push(elevators[1].destinationQueue[t])
+            }
+
+            //  console.log("dest1 = " + dest1)
+
+            var dest2 = []
+            for(var j in elevators[2].destinationQueue){
+                dest1.push(elevators[2].destinationQueue[j])
+            }
+
+            var totalqueue = []
+            totalqueue = dest0.concat(dest1);
+            totalqueue = totalqueue.concat(dest2);            
+
+            totalqueue.push(elevators[0].currentFloor());
+            totalqueue.push(elevators[1].currentFloor());
+            totalqueue.push(elevators[2].currentFloor());
+
+            var waitingqueue = getup().concat(getdown());
+
+            console.log("waitingqueue = " + waitingqueue)
+            //   console.log("waiting queue is" + waitingqueue)
+            
+            for(i = 0;i < waitingqueue.length; i++){
+                if(totalqueue.indexOf(waitingqueue[i]) == -1){
+                    if(elevators[0].loadFactor() < elevators[1].loadFactor()){
+                        if(elevators[2].loadFactor() < elevators[0].loadFactor()){
+                            dest2.push(waitingqueue[i])
+                            elevators[2].destinationQueue = dest2
+                            //console.log("after dest0 = " + dest0)
+                            elevators[2].checkDestinationQueue();
+                        }
+                        else{
+                            dest0.push(waitingqueue[i])
+                            elevators[0].destinationQueue = dest0
+                            //console.log("after dest0 = " + dest0)
+                            elevators[0].checkDestinationQueue();
+                        }
+
+                    }
+
+                    else{
+                        dest1.push(waitingqueue[i]);
+                        elevators[1].destinationQueue = dest1;
+                        console.log("after dest1 = " + dest1)
+                        elevators[1].checkDestinationQueue();       
+                    }
+                    
+                }
+            }
+        }
+
+
+        
+        
+
+        elevators[0].on("floor_button_pressed", function(floorNum) {
+            elevators[0].goToFloor(floorNum)
+        });
+
+        elevators[1].on("floor_button_pressed", function(floorNum) {
+            elevators[1].goToFloor(floorNum)
+        });
+
+        elevators[2].on("floor_button_pressed", function(floorNum) {
+            elevators[2].goToFloor(floorNum)
+        });
+
+        elevators[0].on("stopped_at_floor", function(floorNum){
+            console.log("elevator0 stop at floor triggerred")
+            destinationrefresh()
+        });
+
+        elevators[0].on("idle", function(){
+            console.log("elevator0 idle triggerred")
+            destinationrefresh()
+        });
+
+
+        elevators[1].on("stopped_at_floor", function(floorNum){
+            console.log("elevator1 stop at floor triggerred")
+            destinationrefresh()
+        });
+
+        elevators[1].on("idle", function(){
+            console.log("elevator1 idle triggerred")
+            destinationrefresh()
+        });
+
+
+
+
+        
+    },
+    update: function(dt, elevators, floors) {
+        // We normally don't need to do anything here
+        //console.log("e0 " + elevators[0].destinationQueue)
+        //console.log("e1 " + elevators[1].destinationQueue)
+    }
+}
