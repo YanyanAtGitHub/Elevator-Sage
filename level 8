@@ -85,68 +85,32 @@
             elevators[1].goToFloor(floorNum)
         });
 
-        elevators[0].on("passing_floor", function(floorNum, direction) {
-            var direct = getdirection(elevators[0]);
-            var destqueue = elevators[0].destinationQueue;
-            if(floors[floorNum].on(direct + "_button_pressed").buttonStates.direct == "activated"){
-                destqueue = destqueue.unshift(floorNum)
-                elevators[0].destinationQueue = destqueue
-                elevators[0].checkDestinationQueue();
-            }
-
-            for(var i = 0; i < destqueue.length; i++){
-                if(destqueue[i] == floorNum){
-                    destqueue.splice(i, 1);
-                    destqueue = destqueue.unshift(floorNum)
-                    elevators[0].destinationQueue = destqueue
-                    elevators[0].checkDestinationQueue();                                                          
-                }
-            }
-
+        
+            
+        elevators[0].on("stopped_at_floor", function(floorNum){
+            console.log("elevator0 stop at floor triggerred")
+            destinationrefresh()
         });
 
-        elevators[1].on("passing_floor", function(floorNum, direction) {
-            var direct = getdirection(elevators[1])
-            var destqueue = elevators[1].destinationQueue;
-            if(floors[floorNum].on(direct + "_button_pressed").buttonStates.direct == "activated"){
-                destqueue = destqueue.unshift(floorNum)
-                elevators[1].destinationQueue = destqueue
-                elevators[1].checkDestinationQueue();
-            }
-
-            for(var i = 0; i < destqueue.length; i++){
-                if(destqueue[i] == floorNum){
-                    destqueue.splice(i, 1);
-                    destqueue = destqueue.unshift(floorNum)
-                    elevators[1].destinationQueue = destqueue
-                    elevators[1].checkDestinationQueue();                                                          
-                }
-            }
-            
-            elevators[0].on("stopped_at_floor", function(floorNum){
-                console.log("elevator0 stop at floor triggerred")
-                destinationrefresh()
-            });
-            
-            elevators[0].on("idle", function(){
-                console.log("elevator0 idle triggerred")
-                destinationrefresh()
-            });
-
-
-            elevators[1].on("stopped_at_floor", function(floorNum){
-                console.log("elevator1 stop at floor triggerred")
-                destinationrefresh()
-            });
-            
-            elevators[1].on("idle", function(){
-                console.log("elevator1 idle triggerred")
-                destinationrefresh()
-            });
-            
-            
-            
+        elevators[0].on("idle", function(){
+            console.log("elevator0 idle triggerred")
+            destinationrefresh()
         });
+
+
+        elevators[1].on("stopped_at_floor", function(floorNum){
+            console.log("elevator1 stop at floor triggerred")
+            destinationrefresh()
+        });
+
+        elevators[1].on("idle", function(){
+            console.log("elevator1 idle triggerred")
+            destinationrefresh()
+        });
+
+
+
+
         
     },
     update: function(dt, elevators, floors) {
