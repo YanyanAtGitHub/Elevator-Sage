@@ -8,7 +8,7 @@
                 return "down"
             }
         }
-        
+
         function getup(){
             var upArray = new Array()
 
@@ -31,36 +31,50 @@
 
             return downArray
         }
-        
+
         function destinationrefresh(){
-            var totalqueue = new Array()
-            var destination0 = elevators[0].destinationQueue;
 
-            var destination1 = elevators[1].destinationQueue;
+            var dest0 = []
+            for(var i in elevators[0].destinationQueue){
+                dest0.push(elevators[0].destinationQueue[i])
+            }
 
-            totalqueue = totalqueue.concat(destination0.concat(destination1));
+            console.log("dest0 = " + dest0)
+            var dest1 = []
+            for(var t in elevators[1].destinationQueue){
+                dest1.push(elevators[1].destinationQueue[t])
+            }
+
+            console.log("dest1 = " + dest1)
             
+            var totalqueue = []
+            totalqueue = dest0.concat(dest1);
+
             totalqueue.push(elevators[0].currentFloor());
             totalqueue.push(elevators[1].currentFloor());
 
             var waitingqueue = getup().concat(getdown());
-            console.log("waiting queue is" + waitingqueue)
-            if(waitingqueue){
-                for(i = 0;i < waitingqueue.length; i++){
-                    if(totalqueue.indexOf(waitingqueue[i]) == -1){
-                        if(elevators[0].loadFactor() < elevators[1].loadFactor()){
-                            elevators[0].destinationQueue = elevators[0].destinationQueue.push(waitingqueue[i]);
-                            elevators[0].checkDestinationQueue();                        
-                        }
-                        else{
-                            destination1.push(waitingqueue[i]);
-                            elevators[1].destinationQueue = destination1;
-                            elevators[1].checkDestinationQueue();       
-                        }
-                    }
+            
+            console.log("waitingqueue = " + waitingqueue)
+         //   console.log("waiting queue is" + waitingqueue)
 
+            for(i = 0;i < waitingqueue.length; i++){
+                if(totalqueue.indexOf(waitingqueue[i]) == -1){
+                    if(elevators[0].loadFactor() < elevators[1].loadFactor()){
+                        dest0.push(waitingqueue[i])
+                        elevators[0].destinationQueue = dest0
+                        console.log("after dest0 = " + dest0)
+                        elevators[0].checkDestinationQueue();                        
+                    }
+                    else{
+                        dest1.push(waitingqueue[i]);
+                        elevators[1].destinationQueue = dest1;
+                        console.log("after dest1 = " + dest1)
+                        elevators[1].checkDestinationQueue();       
+                    }
                 }
             }
+
         }
 
         elevators[0].on("floor_button_pressed", function(floorNum) {
@@ -73,65 +87,71 @@
 
         elevators[0].on("passing_floor", function(floorNum, direction) {
             var direct = getdirection(elevators[0]);
-            var destinationqueue = elevators[0].destinationQueue;
+            var destqueue = elevators[0].destinationQueue;
             if(floors[floorNum].on(direct + "_button_pressed").buttonStates.direct == "activated"){
-                destinationqueue = destinationqueue.unshift(floorNum)
-                elevators[0].destinationQueue = destinationqueue
+                destqueue = destqueue.unshift(floorNum)
+                elevators[0].destinationQueue = destqueue
                 elevators[0].checkDestinationQueue();
             }
-            
-                for(var i = 0; i < destinationqueue.length; i++){
-                    if(destinationqueue[i] == floorNum){
-                        destinationqueue.splice(i, 1);
-                        destinationqueue = destinationqueue.unshift(floorNum)
-                        elevators[0].destinationQueue = destinationqueue
-                        elevators[0].checkDestinationQueue();                                                          
-                    }
+
+            for(var i = 0; i < destqueue.length; i++){
+                if(destqueue[i] == floorNum){
+                    destqueue.splice(i, 1);
+                    destqueue = destqueue.unshift(floorNum)
+                    elevators[0].destinationQueue = destqueue
+                    elevators[0].checkDestinationQueue();                                                          
                 }
-            
+            }
+
         });
 
         elevators[1].on("passing_floor", function(floorNum, direction) {
             var direct = getdirection(elevators[1])
-            var destinationqueue = elevators[1].destinationQueue;
+            var destqueue = elevators[1].destinationQueue;
             if(floors[floorNum].on(direct + "_button_pressed").buttonStates.direct == "activated"){
-                destinationqueue = destinationqueue.unshift(floorNum)
-                elevators[1].destinationQueue = destinationqueue
+                destqueue = destqueue.unshift(floorNum)
+                elevators[1].destinationQueue = destqueue
                 elevators[1].checkDestinationQueue();
             }
-            
-            
-            if(destinationqueue){
-                for(var i = 0; i < destinationqueue.length; i++){
-                    if(destinationqueue[i] == floorNum){
-                        destinationqueue.splice(i, 1);
-                        destinationqueue = destinationqueue.unshift(floorNum)
-                        elevators[1].destinationQueue = destinationqueue
-                        elevators[1].checkDestinationQueue();                                                          
-                    }
+
+            for(var i = 0; i < destqueue.length; i++){
+                if(destqueue[i] == floorNum){
+                    destqueue.splice(i, 1);
+                    destqueue = destqueue.unshift(floorNum)
+                    elevators[1].destinationQueue = destqueue
+                    elevators[1].checkDestinationQueue();                                                          
                 }
             }
             
+            elevators[0].on("stopped_at_floor", function(floorNum){
+                console.log("elevator0 stop at floor triggerred")
+                destinationrefresh()
+            });
+            
+            elevators[0].on("idle", function(){
+                console.log("elevator0 idle triggerred")
+                destinationrefresh()
+            });
+
+
+            elevators[1].on("stopped_at_floor", function(floorNum){
+                console.log("elevator1 stop at floor triggerred")
+                destinationrefresh()
+            });
+            
+            elevators[1].on("idle", function(){
+                console.log("elevator1 idle triggerred")
+                destinationrefresh()
+            });
+            
+            
+            
         });
         
-        elevators[0].on("stopped_at_floor", function(floorNum){
-            destinationrefresh()
-        });
-        
-        elevators[1].on("stopped_at_floor", function(floorNum){
-            destinationrefresh()
-        });
-
-
-               
-
-       
     },
     update: function(dt, elevators, floors) {
         // We normally don't need to do anything here
-        console.log(elevators[0].destinationQueue)
-
-
-
+        //console.log("e0 " + elevators[0].destinationQueue)
+        //console.log("e1 " + elevators[1].destinationQueue)
     }
 }
