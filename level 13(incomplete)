@@ -1,0 +1,170 @@
+{
+    init: function(elevators, floors) {
+        function getdirection(elevator){
+            if(elevator.goingUpIndicator() == true){
+                return "up"
+            }
+            else{
+                return "down"
+            }
+        }
+
+        function getup(){
+            var upArray = new Array()
+
+            for(var i = 0; i < floors.length - 1; i++){
+                if(floors[i].on("up_button_pressed").buttonStates.up == "activated"){
+                    upArray.push(i)
+                }     
+            }
+            return upArray
+        }
+
+        function getdown(){
+            var downArray = new Array()
+
+            for(var i = 1; i < floors.length; i++){
+                if(floors[i].on("down_button_pressed").buttonStates.down == "activated"){
+                    downArray.push(i)
+                }
+            }
+
+            return downArray
+        }
+
+        function destinationrefresh(){
+            
+            var dest = []
+            var totalqueue = []
+            for(var d = 0; d < elevators.length; d++){
+                dest[d] = []
+                for(var i in elevators[d].destinationQueue){
+                    dest[d].push(elevators[d].destinationQueue[i])
+                }
+                totalqueue = totalqueue.concat(dest[d]);
+                totalqueue.push(elevators[d].currentFloor());
+                                 
+            }            
+
+
+
+            var waitingqueue = getup().concat(getdown());
+
+            console.log("waitingqueue = " + waitingqueue)
+            //   console.log("waiting queue is" + waitingqueue)
+
+            for(var i = 0;i < waitingqueue.length; i++){
+                if(totalqueue.indexOf(waitingqueue[i]) == -1){
+                    var chooseelevator = 0;
+                    var choosefactor = elevators[0].loadFactor();
+                    for(var k = 0; k < elevators.length; k ++){
+                        if(elevators[k].loadFactor() < choosefactor){
+                            choosefactor = elevators[k].loadFactor()
+                            chooseelevator = k
+
+                        }
+                        else{
+                            continue;
+                        }
+                    }                    
+                    
+                    console.log("chooseelevator = " + chooseelevator)
+                                        
+                    dest[chooseelevator].push(waitingqueue[i])
+                    
+                    console.log("push " + waitingqueue[i]+ " to " + chooseelevator)
+                    elevators[chooseelevator].destinationQueue = dest[chooseelevator]
+                    elevators[chooseelevator].checkDestinationQueue();
+                    
+                    
+                }
+            }
+        }
+        
+        function limitload(){
+            for(var i = 0; i < elevators.length; i++){
+                if(elevators[i].getPressedFloors().length > 1){
+                    elevators[i].goingDownIndicator(false)
+                    elevators[i].goingUpIndicator(false)
+                }
+                else{
+                    elevators[i].goingDownIndicator(true)
+                    elevators[i].goingUpIndicator(true)
+                }
+               
+            }
+        }
+
+
+
+
+
+        elevators[0].on("floor_button_pressed", function(floorNum) {
+            limitload()
+            elevators[0].goToFloor(floorNum)
+        });
+
+        elevators[1].on("floor_button_pressed", function(floorNum) {
+            limitload()
+            elevators[1].goToFloor(floorNum)
+        });
+
+        elevators[2].on("floor_button_pressed", function(floorNum) {
+            limitload()
+            elevators[2].goToFloor(floorNum)
+        });
+        
+        elevators[3].on("floor_button_pressed", function(floorNum) {
+            limitload()
+            elevators[3].goToFloor(floorNum)
+        });
+
+        elevators[4].on("floor_button_pressed", function(floorNum) {
+            limitload()
+            elevators[4].goToFloor(floorNum)
+        });
+
+        elevators[0].on("passing_floor", function(floorNum){
+            limitload()
+
+            destinationrefresh()
+        });
+        
+        elevators[2].on("passing_floor", function(floorNum){
+            limitload()
+
+            destinationrefresh()
+        });
+        
+        elevators[3].on("passing_floor", function(floorNum){
+            limitload()
+
+            destinationrefresh()
+        });
+        
+        elevators[4].on("passing_floor", function(floorNum){
+            limitload()
+            destinationrefresh()
+        });
+
+        elevators[0].on("idle", function(){
+            console.log("elevator0 idle triggerred")
+            destinationrefresh()
+        });
+
+
+        elevators[1].on("passing_floor", function(floorNum){
+            limitload()
+            destinationrefresh()
+        });
+
+        elevators[1].on("idle", function(){
+            //console.log(elevators[1])
+            destinationrefresh()
+        });
+    },
+    update: function(dt, elevators, floors) {
+        // We normally don't need to do anything here
+        console.log(elevators[1].on("idle"))
+    }
+}
