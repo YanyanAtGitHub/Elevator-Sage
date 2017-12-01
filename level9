@@ -1,5 +1,102 @@
 {
     init: function(elevators, floors) {
+        function getdirection(elevator){
+            if(elevator.goingUpIndicator() == true){
+                return "up"
+            }
+            else{
+                return "down"
+            }
+        }
+
+        function getup(){
+            var upArray = new Array()
+
+            for(var i = 0; i < floors.length - 1; i++){
+                if(floors[i].on("up_button_pressed").buttonStates.up == "activated"){
+                    upArray.push(i)
+                }     
+            }
+            return upArray
+        }
+
+        function getdown(){
+            var downArray = new Array()
+
+            for(var i = 1; i < floors.length; i++){
+                if(floors[i].on("down_button_pressed").buttonStates.down == "activated"){
+                    downArray.push(i)
+                }
+            }
+
+            return downArray
+        }
+        
+        function destinationrefresh(){
+
+            var dest0 = []
+            for(var i in elevators[0].destinationQueue){
+                dest0.push(elevators[0].destinationQueue[i])
+            }
+
+            // console.log("dest0 = " + dest0)
+            var dest1 = []
+            for(var t in elevators[1].destinationQueue){
+                dest1.push(elevators[1].destinationQueue[t])
+            }
+
+            //  console.log("dest1 = " + dest1)
+
+            var dest2 = []
+            for(var j in elevators[2].destinationQueue){
+                dest1.push(elevators[2].destinationQueue[j])
+            }
+
+            var totalqueue = []
+            totalqueue = dest0.concat(dest1);
+            totalqueue = totalqueue.concat(dest2);            
+
+            totalqueue.push(elevators[0].currentFloor());
+            totalqueue.push(elevators[1].currentFloor());
+            totalqueue.push(elevators[2].currentFloor());
+
+            var waitingqueue = getup().concat(getdown());
+
+            console.log("waitingqueue = " + waitingqueue)
+            //   console.log("waiting queue is" + waitingqueue)
+            
+            for(i = 0;i < waitingqueue.length; i++){
+                if(totalqueue.indexOf(waitingqueue[i]) == -1){
+                    if(elevators[0].loadFactor() < elevators[1].loadFactor()){
+                        if(elevators[2].loadFactor() < elevators[0].loadFactor()){
+                            dest2.push(waitingqueue[i])
+                            elevators[2].destinationQueue = dest2
+                            //console.log("after dest0 = " + dest0)
+                            elevators[2].checkDestinationQueue();
+                        }
+                        else{
+                            dest0.push(waitingqueue[i])
+                            elevators[0].destinationQueue = dest0
+                            //console.log("after dest0 = " + dest0)
+                            elevators[0].checkDestinationQueue();
+                        }
+
+                    }
+
+                    else{
+                        dest1.push(waitingqueue[i]);
+                        elevators[1].destinationQueue = dest1;
+                        console.log("after dest1 = " + dest1)
+                        elevators[1].checkDestinationQueue();       
+                    }
+                    
+                }
+            }
+        }
+
+
+        
+        
 
         elevators[0].on("floor_button_pressed", function(floorNum) {
             elevators[0].goToFloor(floorNum)
@@ -8,181 +105,40 @@
         elevators[1].on("floor_button_pressed", function(floorNum) {
             elevators[1].goToFloor(floorNum)
         });
-        
-        elevators[1].on("passing_floor", function(floorNum, direction) {
 
-            console.log("Elevator 1 is passing floor " + floorNum);
-            console.log("Elevator 1's direction is " + direction);
-            console.log(floorNum + "'s up button is " + floors[floorNum].on("up_button_pressed").buttonStates.up)
-            console.log(floorNum + "'s down button is " + floors[floorNum].on("down_button_pressed").buttonStates.down)
-            
-            var dest = elevators[1].destinationQueue;
-            
-            if(dest.indexOf(floorNum) != -1){
-                for(var i = 0; i < dest.length; i++){
-                    if(dest[i] == floorNum){
-                        var t = dest[i]
-                        dest.splice(i, 1);
-                        dest.unshift(t);
-                    }
-                }
-                elevators[1].destinationQueue = dest;
-                elevators[1].checkDestinationQueue();
-            }
-            
-            
-            if(elevators[1].loadFactor()< 0.7){
-                //console.log("loadfactor < 0.9 is True")
-                if(direction == "up"){
-                    if(floors[floorNum].on("up_button_pressed").buttonStates.up == "activated"){
-                        elevators[1].destinationQueue.unshift(floorNum);
-                        elevators[1].checkDestinationQueue();
-                    }
-                }
-                if(direction == "down"){
-                    if(floors[floorNum].on("down_button_pressed").buttonStates.down == "activated"){
-                        
-                        elevators[1].destinationQueue.unshift(floorNum);
-                        elevators[1].checkDestinationQueue();
-                    }
-                }
-            }
-            
-            var nextdest = elevators[1].destinationQueue[0];
-            
-            console.log("elevator1's next destination is " + nextdest)
-            console.log("elevator 1's currentfloor is " + elevators[1].currentFloor())
-            
-            if(floorNum == 0||floorNum == 12){
-                elevators[1].goingDownIndicator(true);
-                elevators[1].goingUpIndicator(true);
-            }
-            
-            else{
-                
-                if(nextdest - elevators[1].currentFloor() == 0){
-                    console.log("elevator1 both indicator triggered")
-                    elevators[1].goingDownIndicator(true);
-                    elevators[1].goingUpIndicator(true);
-                }
-                
-                else{
-                    if(nextdest - elevators[1].currentFloor() > 0){
-                        console.log("elevator1 up indicator triggered")
-                        elevators[1].goingDownIndicator(false);
-                        elevators[1].goingUpIndicator(true);
-                    }
-                    else{
-                        console.log("elevator1 down indicator triggered")
-                        elevators[1].goingDownIndicator(true);
-                        elevators[1].goingUpIndicator(false);
-                    }
-                }
-   
-                
-            }
-            
-           
-            
-    
+       elevators[2].on("floor_button_pressed", function(floorNum) {
+            elevators[2].goToFloor(floorNum)
         });
-        
-        elevators[0].on("passing_floor", function(floorNum, direction) {
 
-            console.log("Elevator 0 is passing floor " + floorNum);
-            console.log("Elevator 0's direction is " + direction);
-            console.log(floorNum + "'s up button is " + floors[floorNum].on("up_button_pressed").buttonStates.up)
-            console.log(floorNum + "'s down button is " + floors[floorNum].on("down_button_pressed").buttonStates.down)
-
-            var dest = elevators[0].destinationQueue;
-
-            if(dest.indexOf(floorNum) != -1){
-                for(var i = 0; i < dest.length; i++){
-                    if(dest[i] == floorNum){
-                        var t = dest[i]
-                        dest.splice(i, 1);
-                        dest.unshift(t);
-                    }
-                }
-                elevators[0].destinationQueue = dest;
-                elevators[0].checkDestinationQueue();
-            }
-            
-
-            console.log("elevator 0 loadfactor is " + elevators[0].loadFactor())
-
-
-            if(elevators[0].loadFactor()< 0.5){
-                console.log("elevator 0 loadfactor < 0.9 is True")
-                if(direction == "up"){
-                    if(floors[floorNum].on("up_button_pressed").buttonStates.up == "activated"){
-                        elevators[0].destinationQueue.unshift(floorNum);
-                        elevators[0].checkDestinationQueue();
-                    }
-                }
-                if(direction == "down"){
-                    if(floors[floorNum].on("down_button_pressed").buttonStates.down == "activated"){
-
-                        elevators[0].destinationQueue.unshift(floorNum);
-                        elevators[0].checkDestinationQueue();
-                    }
-                }
-            }
-            
-            var nextdest = elevators[0].destinationQueue[0];
-
-            console.log("elevator0's next destination is " + nextdest)
-
-            if(floorNum == 0||floorNum == 12){
-                elevators[0].goingDownIndicator(true);
-                elevators[0].goingUpIndicator(true);
-            }
-
-            else{
-                
-                if(nextdest - elevators[0].currentFloor() == 0){
-                    console.log("elevator0 both indicator triggered")
-                    elevators[0].goingDownIndicator(true);
-                    elevators[0].goingUpIndicator(true);
-                }
-
-                else{
-                    if(nextdest - elevators[0].currentFloor() > 0){
-                        console.log("elevator0 up indicator triggered")
-                        elevators[0].goingDownIndicator(false);
-                        elevators[0].goingUpIndicator(true);
-                    }
-                    else{
-                        console.log("elevator0 down indicator triggered")
-                        elevators[0].goingDownIndicator(true);
-                        elevators[0].goingUpIndicator(false);
-                    }
-                }
-            }
-
-
-
+        elevators[0].on("stopped_at_floor", function(floorNum){
+            console.log("elevator0 stop at floor triggerred")
+            destinationrefresh()
         });
-        
-        elevators[1].on("idle", function() {
-            elevators[1].goingDownIndicator(true);
-            elevators[1].goingUpIndicator(true);
-            elevators[1].goToFloor(0)
+
+        elevators[0].on("idle", function(){
+            console.log("elevator0 idle triggerred")
+            destinationrefresh()
         });
-        
-        elevators[0].on("idle", function() {
-            elevators[0].goingDownIndicator(true);
-            elevators[0].goingUpIndicator(true);
-            elevators[0].goToFloor(0)
+
+
+        elevators[1].on("stopped_at_floor", function(floorNum){
+            console.log("elevator1 stop at floor triggerred")
+            destinationrefresh()
         });
-                
+
+        elevators[1].on("idle", function(){
+            console.log("elevator1 idle triggerred")
+            destinationrefresh()
+        });
+
+
+
 
         
-        
-
-
     },
     update: function(dt, elevators, floors) {
         // We normally don't need to do anything here
+        //console.log("e0 " + elevators[0].destinationQueue)
+        //console.log("e1 " + elevators[1].destinationQueue)
     }
 }
